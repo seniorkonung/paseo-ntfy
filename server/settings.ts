@@ -9,15 +9,27 @@ import {
   ntfySettingsValuesSchema,
 } from "../shared/ntfy";
 
-const SETTINGS_VERSION = 1;
+const SETTINGS_VERSION = 2;
 const TOPIC_PATTERN = /^[-_A-Za-z0-9]{1,64}$/;
 
-const settingsDocumentSchema = z.object({
+const legacySettingsDocumentSchema = z.object({
+  version: z.literal(1),
+  revision: z.number().int().positive(),
+  serverId: z.string().min(1),
+  values: ntfySettingsValuesSchema.omit({ priority: true }),
+});
+
+const currentSettingsDocumentSchema = z.object({
   version: z.literal(SETTINGS_VERSION),
   revision: z.number().int().positive(),
   serverId: z.string().min(1),
   values: ntfySettingsValuesSchema,
 });
+
+const settingsDocumentSchema = z.discriminatedUnion("version", [
+  legacySettingsDocumentSchema,
+  currentSettingsDocumentSchema,
+]);
 
 export interface StoredNtfySettings {
   revision: number;
@@ -64,6 +76,7 @@ export function normalizeNtfySettings(values: NtfySettingsValues): NtfySettingsV
     serverUrl,
     topic,
     accessToken: values.accessToken.trim(),
+    priority: values.priority,
   };
 }
 
@@ -101,10 +114,14 @@ export class NtfySettingsStore {
     if (!parsed.success) {
       throw new Error(`Ntfy settings file has an unsupported or invalid format: ${this.path}`);
     }
+    const values =
+      parsed.data.version === 1
+        ? { ...parsed.data.values, priority: DEFAULT_NTFY_SETTINGS.priority }
+        : parsed.data.values;
     return {
       revision: parsed.data.revision,
       serverId: parsed.data.serverId,
-      values: normalizeNtfySettings(parsed.data.values),
+      values: normalizeNtfySettings(values),
     };
   }
 

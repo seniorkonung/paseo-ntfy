@@ -15,7 +15,8 @@ finishes, fails, or requests permission/input.
 
    - **Server URL** — ntfy server root, default `https://ntfy.sh`;
    - **Topic** — 1–64 letters, numbers, `_`, or `-`;
-   - **Access token** — optional Bearer token.
+   - **Access token** — optional Bearer token;
+   - **Priority** — global ntfy priority from Minimal (1) to Maximum (5), default 3.
 
 3. Save, then use **Send test notification**.
 
@@ -48,7 +49,8 @@ independently.
 
 Agent notifications include an ntfy Click action targeting
 `paseo://h/<server-id>/agent/<agent-id>`. The agent response and tool details are never
-included. Delivery uses priority 3, one attempt, and a 10-second timeout.
+included. Delivery uses the globally configured priority, one attempt, and a 10-second
+timeout.
 
 ## Development
 

@@ -3,12 +3,14 @@ import { useRpc } from "@getpaseo/plugin/client";
 import {
   SettingsAction,
   SettingsInput,
+  SettingsSelect,
   SettingsSection,
 } from "@getpaseo/plugin/client/ui";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import {
   DEFAULT_NTFY_SETTINGS,
+  type NtfyPriority,
   type NtfySettingsValues,
   readNtfySettingsRpc,
   saveNtfySettingsRpc,
@@ -16,6 +18,20 @@ import {
 } from "../shared/ntfy";
 
 type Feedback = { kind: "success" | "error"; message: string } | null;
+
+type PriorityValue = "1" | "2" | "3" | "4" | "5";
+
+const PRIORITY_OPTIONS: ReadonlyArray<{ label: string; value: PriorityValue }> = [
+  { label: "Minimal (1)", value: "1" },
+  { label: "Low (2)", value: "2" },
+  { label: "Default (3)", value: "3" },
+  { label: "High (4)", value: "4" },
+  { label: "Maximum (5)", value: "5" },
+];
+
+function parsePriority(value: PriorityValue): NtfyPriority {
+  return Number(value) as NtfyPriority;
+}
 
 export function NtfySettingsScreen({ theme, host, layout }: PluginSurfaceProps) {
   const readSettings = useRpc(readNtfySettingsRpc);
@@ -143,6 +159,14 @@ export function NtfySettingsScreen({ theme, host, layout }: PluginSurfaceProps) 
           secureTextEntry
           disabled={disabled}
           onChangeText={(value) => change("accessToken", value)}
+        />
+        <SettingsSelect
+          label="Priority"
+          hint="Applied globally to test and agent notifications."
+          value={String(draft.priority) as PriorityValue}
+          options={PRIORITY_OPTIONS}
+          disabled={disabled}
+          onValueChange={(value) => change("priority", parsePriority(value))}
         />
       </SettingsSection>
 

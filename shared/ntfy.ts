@@ -5,11 +5,23 @@ export const NTFY_LABEL = "ntfy";
 export const NTFY_ENABLED_VALUE = "true";
 export const NTFY_DISABLED_VALUE = "false";
 export const DEFAULT_NTFY_SERVER_URL = "https://ntfy.sh";
+export const DEFAULT_NTFY_PRIORITY = 3;
+
+export const ntfyPrioritySchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+]);
+
+export type NtfyPriority = z.infer<typeof ntfyPrioritySchema>;
 
 export const ntfySettingsValuesSchema = z.object({
   serverUrl: z.string(),
   topic: z.string(),
   accessToken: z.string(),
+  priority: ntfyPrioritySchema,
 });
 
 export type NtfySettingsValues = z.infer<typeof ntfySettingsValuesSchema>;
@@ -18,6 +30,7 @@ export const DEFAULT_NTFY_SETTINGS: NtfySettingsValues = {
   serverUrl: DEFAULT_NTFY_SERVER_URL,
   topic: "",
   accessToken: "",
+  priority: DEFAULT_NTFY_PRIORITY,
 };
 
 const settingsSnapshotSchema = z.object({

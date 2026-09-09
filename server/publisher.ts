@@ -42,7 +42,7 @@ export async function publishNtfy(
     topic: settings.topic,
     title: notification.title,
     message: notification.message,
-    priority: 3,
+    priority: settings.priority,
     ...(notification.click ? { click: notification.click } : {}),
   };
   const fetchNtfy = options.fetch ?? (fetch as unknown as NtfyFetch);

@@ -1,5 +1,6 @@
 import type { PluginHookAgent, PluginHookContext } from "@getpaseo/plugin/server";
 import { describe, expect, it, vi } from "vitest";
+import type { NtfySettingsValues } from "../shared/ntfy";
 import type { NtfyFetch } from "./publisher";
 import {
   NtfyNotificationService,
@@ -64,14 +65,14 @@ describe("NtfyNotificationService", () => {
       read: vi.fn(async () => ({
         revision: 1,
         serverId: "server",
-        values: { serverUrl: "https://ntfy.example", topic, accessToken: "" },
+        values: { serverUrl: "https://ntfy.example", topic, accessToken: "", priority: 4 },
       })),
     } as unknown as NtfySettingsStore;
   }
 
   it("rechecks the fresh label before publishing", async () => {
     const publish = vi.fn(async () => {}) as unknown as (
-      settings: { serverUrl: string; topic: string; accessToken: string },
+      settings: NtfySettingsValues,
       notification: { title: string; message: string; click?: string },
       options?: { fetch?: NtfyFetch; signal?: AbortSignal; timeoutMs?: number },
     ) => Promise<void>;

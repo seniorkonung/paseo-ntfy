@@ -26,7 +26,7 @@ describe("NtfySettingsStore", () => {
     await expect(store.read()).resolves.toEqual({
       revision: 0,
       serverId: "",
-      values: { serverUrl: "https://ntfy.sh", topic: "", accessToken: "" },
+      values: { serverUrl: "https://ntfy.sh", topic: "", accessToken: "", priority: 3 },
     });
   });
 
@@ -35,7 +35,12 @@ describe("NtfySettingsStore", () => {
     const store = new NtfySettingsStore(path);
     const result = await store.save(
       0,
-      { serverUrl: " https://ntfy.example/// ", topic: " paseo_1 ", accessToken: " token " },
+      {
+        serverUrl: " https://ntfy.example/// ",
+        topic: " paseo_1 ",
+        accessToken: " token ",
+        priority: 5,
+      },
       "server-id",
     );
     expect(result).toEqual({
@@ -47,24 +52,25 @@ describe("NtfySettingsStore", () => {
           serverUrl: "https://ntfy.example",
           topic: "paseo_1",
           accessToken: "token",
+          priority: 5,
         },
       },
     });
     expect((await stat(path)).mode & 0o777).toBe(0o600);
     expect((await stat(dirname(path))).mode & 0o777).toBe(0o700);
-    expect(JSON.parse(await readFile(path, "utf8"))).toMatchObject({ version: 1, revision: 1 });
+    expect(JSON.parse(await readFile(path, "utf8"))).toMatchObject({ version: 2, revision: 1 });
   });
 
   it("returns the latest document on an optimistic revision conflict", async () => {
     const store = new NtfySettingsStore(await temporarySettingsPath());
     await store.save(
       0,
-      { serverUrl: "https://ntfy.sh", topic: "one", accessToken: "" },
+      { serverUrl: "https://ntfy.sh", topic: "one", accessToken: "", priority: 2 },
       "server",
     );
     const conflict = await store.save(
       0,
-      { serverUrl: "https://ntfy.sh", topic: "two", accessToken: "" },
+      { serverUrl: "https://ntfy.sh", topic: "two", accessToken: "", priority: 4 },
       "server",
     );
     expect(conflict.status).toBe("conflict");
@@ -79,17 +85,58 @@ describe("NtfySettingsStore", () => {
     await expect(new NtfySettingsStore(path).read()).rejects.toThrow("not valid JSON");
 
     expect(() =>
-      normalizeNtfySettings({ serverUrl: "ftp://ntfy.sh", topic: "ok", accessToken: "" }),
+      normalizeNtfySettings({
+        serverUrl: "ftp://ntfy.sh",
+        topic: "ok",
+        accessToken: "",
+        priority: 3,
+      }),
     ).toThrow("http:// or https://");
     expect(() =>
       normalizeNtfySettings({
         serverUrl: "https://user:pass@ntfy.sh",
         topic: "ok",
         accessToken: "",
+        priority: 3,
       }),
     ).toThrow("must not contain credentials");
     expect(() =>
-      normalizeNtfySettings({ serverUrl: "https://ntfy.sh", topic: "not valid", accessToken: "" }),
+      normalizeNtfySettings({
+        serverUrl: "https://ntfy.sh",
+        topic: "not valid",
+        accessToken: "",
+        priority: 3,
+      }),
     ).toThrow("Topic must contain");
+  });
+
+  it("migrates version 1 documents to the default priority", async () => {
+    const path = await temporarySettingsPath();
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(
+      path,
+      JSON.stringify({
+        version: 1,
+        revision: 7,
+        serverId: "server",
+        values: {
+          serverUrl: "https://ntfy.example",
+          topic: "paseo",
+          accessToken: "token",
+        },
+      }),
+      "utf8",
+    );
+
+    await expect(new NtfySettingsStore(path).read()).resolves.toEqual({
+      revision: 7,
+      serverId: "server",
+      values: {
+        serverUrl: "https://ntfy.example",
+        topic: "paseo",
+        accessToken: "token",
+        priority: 3,
+      },
+    });
   });
 });

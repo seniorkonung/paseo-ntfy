@@ -5,6 +5,7 @@ const settings = {
   serverUrl: "https://ntfy.example",
   topic: "paseo_agents",
   accessToken: "tk_secret",
+  priority: 5 as const,
 };
 
 describe("publishNtfy", () => {
@@ -35,7 +36,7 @@ describe("publishNtfy", () => {
       topic: "paseo_agents",
       title: "Paseo · Agent",
       message: "Agent finished and is waiting for you.",
-      priority: 3,
+      priority: 5,
       click: "paseo://h/server/agent/agent-id",
     });
   });
