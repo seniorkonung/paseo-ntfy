@@ -1,13 +1,17 @@
 import type { PluginClientContext } from "@getpaseo/plugin/client";
-import { GreetingSurface } from "./client/greeting";
+import { registerNtfyPills } from "./client/pill";
+import { NtfySettingsScreen } from "./client/settings";
 
 export default function contribute(client: PluginClientContext) {
-  client.addSurface("greeting", GreetingSurface);
-  client.addSidebarItem({
-    id: "greeting",
-    title: "Greeting",
-    icon: "MessageCircle",
-    surface: "greeting",
+  const removeSettings = client.addSettingsScreen({
+    id: "ntfy",
+    title: "Ntfy notifications",
+    icon: "Bell",
+    Component: NtfySettingsScreen,
   });
-  return () => {};
+  const removePills = registerNtfyPills(client);
+  return () => {
+    removePills();
+    removeSettings();
+  };
 }
