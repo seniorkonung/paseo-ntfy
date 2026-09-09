@@ -1,9 +1,8 @@
 import type { PluginClientContext } from "@getpaseo/plugin/client";
 import { registerNtfyPills } from "./client/pill";
-import { createNtfySettingsScreen } from "./client/settings";
+import { NtfySettingsScreen } from "./client/settings";
 
 export default function contribute(client: PluginClientContext) {
-  const NtfySettingsScreen = createNtfySettingsScreen(client);
   const removeSettings = client.addSettingsScreen({
     id: "ntfy",
     title: "Ntfy notifications",
