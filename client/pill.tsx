@@ -1,15 +1,50 @@
 import type { PluginClientContext, PluginComposerPillProps } from "@getpaseo/plugin/client";
-import { useAgent } from "@getpaseo/plugin/client";
-import { Icon } from "@getpaseo/plugin/client/react-native";
+import { useCallback, useSyncExternalStore } from "react";
 import { Text, View } from "react-native";
 import { isNtfyEnabled, setAgentNtfyRpc } from "../shared/ntfy";
 
+const enabledByAgent = new Map<string, boolean>();
+const listenersByAgent = new Map<string, Set<() => void>>();
+
+function setEnabled(agentId: string, enabled: boolean): void {
+  if (enabledByAgent.get(agentId) === enabled) return;
+  enabledByAgent.set(agentId, enabled);
+  for (const listener of listenersByAgent.get(agentId) ?? []) listener();
+}
+
+function removeEnabled(agentId: string): void {
+  if (!enabledByAgent.delete(agentId)) return;
+  for (const listener of listenersByAgent.get(agentId) ?? []) listener();
+}
+
 export function NtfyPill({ agentId, theme }: PluginComposerPillProps) {
-  const enabled = useAgent(agentId, (agent) => isNtfyEnabled(agent.labels)) ?? false;
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      const listeners = listenersByAgent.get(agentId) ?? new Set<() => void>();
+      listeners.add(listener);
+      listenersByAgent.set(agentId, listeners);
+      return () => {
+        listeners.delete(listener);
+        if (listeners.size === 0) listenersByAgent.delete(agentId);
+      };
+    },
+    [agentId],
+  );
+  const getSnapshot = useCallback(() => enabledByAgent.get(agentId) ?? false, [agentId]);
+  const enabled = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const color = enabled ? theme.colors.accent : theme.colors.foregroundMuted;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <Icon name={enabled ? "BellRing" : "Bell"} size={16} color={color} />
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        opacity: enabled ? 1 : 0.6,
+      }}
+    >
+      <Text style={{ fontSize: 15 }} accessibilityElementsHidden>
+        🔔
+      </Text>
       <Text style={{ color }}>Ntfy</Text>
     </View>
   );
@@ -27,6 +62,7 @@ export function registerNtfyPills(client: PluginClientContext): () => void {
   function remove(agentId: string): void {
     pills.get(agentId)?.remove();
     pills.delete(agentId);
+    removeEnabled(agentId);
   }
 
   function upsert(agent: {
@@ -37,6 +73,12 @@ export function registerNtfyPills(client: PluginClientContext): () => void {
     if (stopped || !agent.workspaceId || agent.archivedAt) {
       remove(agent.id);
       return;
+    }
+    if ("labels" in agent) {
+      setEnabled(
+        agent.id,
+        isNtfyEnabled((agent as { labels?: Readonly<Record<string, string>> }).labels),
+      );
     }
     const existing = pills.get(agent.id);
     if (existing?.workspaceId === agent.workspaceId) return;
@@ -56,6 +98,7 @@ export function registerNtfyPills(client: PluginClientContext): () => void {
           agentId: agent.id,
           enabled: !isNtfyEnabled(fresh.agent.labels),
         });
+        setEnabled(agent.id, !isNtfyEnabled(fresh.agent.labels));
       },
     });
     pills.set(agent.id, { workspaceId, remove: removePill });
@@ -94,6 +137,7 @@ export function registerNtfyPills(client: PluginClientContext): () => void {
     stopped = true;
     unsubscribe();
     for (const pill of pills.values()) pill.remove();
+    for (const agentId of pills.keys()) removeEnabled(agentId);
     pills.clear();
   };
 }
