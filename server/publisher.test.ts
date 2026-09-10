@@ -19,7 +19,14 @@ describe("publishNtfy", () => {
       {
         title: "Paseo · Agent",
         message: "Agent finished and is waiting for you.",
-        click: "paseo://h/server/agent/agent-id",
+        actions: [
+          {
+            action: "view",
+            label: "Open session",
+            url: "paseo://h/server/agent/agent-id",
+            clear: true,
+          },
+        ],
       },
       { fetch: fetchNtfy },
     );
@@ -37,11 +44,18 @@ describe("publishNtfy", () => {
       title: "Paseo · Agent",
       message: "Agent finished and is waiting for you.",
       priority: 5,
-      click: "paseo://h/server/agent/agent-id",
+      actions: [
+        {
+          action: "view",
+          label: "Open session",
+          url: "paseo://h/server/agent/agent-id",
+          clear: true,
+        },
+      ],
     });
   });
 
-  it("omits optional auth and click", async () => {
+  it("omits optional auth and actions", async () => {
     const fetchNtfy = vi.fn<NtfyFetch>().mockResolvedValue({
       ok: true,
       status: 200,
@@ -53,7 +67,7 @@ describe("publishNtfy", () => {
     );
     const [, init] = fetchNtfy.mock.calls[0]!;
     expect(init.headers).toEqual({ "Content-Type": "application/json" });
-    expect(JSON.parse(init.body)).not.toHaveProperty("click");
+    expect(JSON.parse(init.body)).not.toHaveProperty("actions");
   });
 
   it("fails once on non-success and enforces the timeout", async () => {

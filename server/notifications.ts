@@ -27,7 +27,14 @@ export function notificationForAgent(
   return {
     title: `Paseo · ${title}`,
     message: MESSAGES[reason],
-    click: paseoAgentDeepLink(serverId, agent.id),
+    actions: [
+      {
+        action: "view",
+        label: "Open session",
+        url: paseoAgentDeepLink(serverId, agent.id),
+        clear: true,
+      },
+    ],
   };
 }
 

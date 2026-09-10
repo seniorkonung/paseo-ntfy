@@ -47,10 +47,10 @@ independently.
 - Permission or question: `Agent is waiting for your input.`
 - Canceled turn: no notification.
 
-Agent notifications include an ntfy Click action targeting
-`paseo://h/<server-id>/agent/<agent-id>`. The agent response and tool details are never
-included. Delivery uses the globally configured priority, one attempt, and a 10-second
-timeout.
+Agent notifications include an **Open session** ntfy View action targeting
+`paseo://h/<server-id>/agent/<agent-id>`. Using the action opens Paseo and clears the
+notification, marking it as read. The agent response and tool details are never included.
+Delivery uses the globally configured priority, one attempt, and a 10-second timeout.
 
 ## Development
 

@@ -3,8 +3,17 @@ import type { NtfySettingsValues } from "../shared/ntfy";
 export interface NtfyNotification {
   title: string;
   message: string;
-  click?: string;
+  actions?: NtfyAction[];
 }
+
+export interface NtfyViewAction {
+  action: "view";
+  label: string;
+  url: string;
+  clear?: boolean;
+}
+
+export type NtfyAction = NtfyViewAction;
 
 export type NtfyFetch = (
   input: string,
@@ -43,7 +52,7 @@ export async function publishNtfy(
     title: notification.title,
     message: notification.message,
     priority: settings.priority,
-    ...(notification.click ? { click: notification.click } : {}),
+    ...(notification.actions?.length ? { actions: notification.actions } : {}),
   };
   const fetchNtfy = options.fetch ?? (fetch as unknown as NtfyFetch);
   try {

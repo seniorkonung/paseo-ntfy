@@ -1,7 +1,7 @@
 import type { PluginHookAgent, PluginHookContext } from "@getpaseo/plugin/server";
 import { describe, expect, it, vi } from "vitest";
 import type { NtfySettingsValues } from "../shared/ntfy";
-import type { NtfyFetch } from "./publisher";
+import type { NtfyFetch, NtfyNotification } from "./publisher";
 import {
   NtfyNotificationService,
   notificationForAgent,
@@ -25,11 +25,18 @@ describe("lifecycle notification mapping", () => {
     expect(reasonForTurnOutcome({ kind: "canceled", reason: "manual" })).toBeNull();
   });
 
-  it("uses generic content and the Paseo click action", () => {
+  it("uses generic content and a clearing Paseo view action", () => {
     expect(notificationForAgent(agent, "permission", "server/id")).toEqual({
       title: "Paseo · Checkout agent",
       message: "Agent is waiting for your input.",
-      click: "paseo://h/server%2Fid/agent/agent-123456789",
+      actions: [
+        {
+          action: "view",
+          label: "Open session",
+          url: "paseo://h/server%2Fid/agent/agent-123456789",
+          clear: true,
+        },
+      ],
     });
     expect(notificationForAgent({ ...agent, title: null }, "failed", "server").title).toBe(
       "Paseo · agent-12",
@@ -73,7 +80,7 @@ describe("NtfyNotificationService", () => {
   it("rechecks the fresh label before publishing", async () => {
     const publish = vi.fn(async () => {}) as unknown as (
       settings: NtfySettingsValues,
-      notification: { title: string; message: string; click?: string },
+      notification: NtfyNotification,
       options?: { fetch?: NtfyFetch; signal?: AbortSignal; timeoutMs?: number },
     ) => Promise<void>;
 
@@ -86,7 +93,16 @@ describe("NtfyNotificationService", () => {
     expect(publish).toHaveBeenCalledOnce();
     expect(publish).toHaveBeenCalledWith(
       expect.objectContaining({ topic: "topic" }),
-      expect.objectContaining({ click: `paseo://h/server/agent/${agent.id}` }),
+      expect.objectContaining({
+        actions: [
+          {
+            action: "view",
+            label: "Open session",
+            url: `paseo://h/server/agent/${agent.id}`,
+            clear: true,
+          },
+        ],
+      }),
       expect.objectContaining({ timeoutMs: 10_000 }),
     );
   });
