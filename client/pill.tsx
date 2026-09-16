@@ -51,7 +51,7 @@ export function registerNtfyPills(client: PluginClientContext): () => void {
       agentId: agent.id,
       button: {
         title: "Toggle ntfy notifications for this agent",
-        label: "Ntfy",
+        label: "\u2060", // Только иконка, без видимого названия
         icon: NtfyPillIcon,
         behavior: {
           kind: "action",
