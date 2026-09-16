@@ -1,17 +1,19 @@
-import type { PluginClientContext, PluginComposerPillProps } from "@getpaseo/plugin/client";
+import type { PluginButtonIconProps, PluginClientContext } from "@getpaseo/plugin/client";
 import { useAgent } from "@getpaseo/plugin/client";
 import { Icon } from "@getpaseo/plugin/client/react-native";
-import { Text, View } from "react-native";
 import { isNtfyEnabled, setAgentNtfyRpc } from "../shared/ntfy";
 
-export function NtfyPill({ agentId, theme }: PluginComposerPillProps) {
-  const enabled = useAgent(agentId, (agent) => isNtfyEnabled(agent.labels)) ?? false;
-  const color = enabled ? theme.colors.accent : theme.colors.foregroundMuted;
+export function NtfyPillIcon(props: PluginButtonIconProps) {
+  // Composer pills always have agent context. Keep the fallback so the icon also
+  // remains safe if a future host renders it before attaching that context.
+  const resolvedAgentId = props.context === "agent" ? props.agentId : "";
+  const enabled = useAgent(resolvedAgentId, (agent) => isNtfyEnabled(agent.labels)) ?? false;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <Icon name={enabled ? "BellRing" : "Bell"} size={16} color={color} />
-      <Text style={{ color }}>Ntfy</Text>
-    </View>
+    <Icon
+      name={enabled ? "BellRing" : "Bell"}
+      size={props.size}
+      color={enabled ? props.theme.colors.accent : props.color}
+    />
   );
 }
 
@@ -43,22 +45,28 @@ export function registerNtfyPills(client: PluginClientContext): () => void {
     existing?.remove();
 
     const workspaceId = agent.workspaceId;
-    const removePill = client.addComposerPill({
+    const registration = client.addComposerPill({
       id: "ntfy",
-      title: "Toggle ntfy notifications for this agent",
       workspaceId,
       agentId: agent.id,
-      Component: NtfyPill,
-      async onPress() {
-        const fresh = await client.paseo.agents.ref(agent.id).refresh();
-        if (!fresh) throw new Error("The agent no longer exists.");
-        await client.rpc(setAgentNtfyRpc, {
-          agentId: agent.id,
-          enabled: !isNtfyEnabled(fresh.agent.labels),
-        });
+      button: {
+        title: "Toggle ntfy notifications for this agent",
+        label: "Ntfy",
+        icon: NtfyPillIcon,
+        behavior: {
+          kind: "action",
+          async onPress() {
+            const fresh = await client.paseo.agents.ref(agent.id).refresh();
+            if (!fresh) throw new Error("The agent no longer exists.");
+            await client.rpc(setAgentNtfyRpc, {
+              agentId: agent.id,
+              enabled: !isNtfyEnabled(fresh.agent.labels),
+            });
+          },
+        },
       },
     });
-    pills.set(agent.id, { workspaceId, remove: removePill });
+    pills.set(agent.id, { workspaceId, remove: () => registration.remove() });
   }
 
   const unsubscribe = client.paseo.agents.subscribe((update) => {
