@@ -47,6 +47,24 @@ independently.
 - Permission or question: `Agent is waiting for your input.`
 - Canceled turn: no notification.
 
+### Claude Code background work
+
+Claude Code ends its turn while background work runs and starts a new turn when that work
+reports back. For Claude agents, a completed turn is not announced while work started since
+your latest message is still running:
+
+- background Bash commands, including commands moved to the background by their timeout,
+  and Monitor watches, until their task notification arrives or the agent stops them;
+- background subagents and workflows, until Paseo reports them finished.
+
+When a finished subagent wakes the agent a second time and that turn adds only agent text, it
+is not announced again. Your next message resets both checks, so the agent's reply to it is
+always announced.
+
+Subagent status is read from the Paseo daemon over a second local session, authenticated with
+`$PASEO_HOME/local-credential` like the Paseo CLI (or `PASEO_PASSWORD` when set). If the daemon
+cannot be reached, the turn is announced as before.
+
 Agent notifications include an **Open session** ntfy View action targeting
 `paseo://h/<server-id>/agent/<agent-id>`. Using the action opens Paseo and clears the
 notification, marking it as read. The agent response and tool details are never included.

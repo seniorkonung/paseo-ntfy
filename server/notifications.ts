@@ -53,6 +53,7 @@ export class NtfyNotificationService {
     agent: PluginHookAgent,
     reason: NotificationReason,
     context: PluginHookContext,
+    shouldPublish: () => Promise<boolean> = async () => true,
   ): Promise<void> {
     const stored = await this.settingsStore.read();
     if (!stored.values.topic || !stored.serverId) return;
@@ -70,6 +71,7 @@ export class NtfyNotificationService {
     }
     this.tracker.update(fresh.agent.id, fresh.agent.labels, fresh.agent.archivedAt ?? null);
     if (!this.tracker.isEnabled(agent.id) || !isNtfyEnabled(fresh.agent.labels)) return;
+    if (!(await shouldPublish())) return;
 
     try {
       await this.publish(

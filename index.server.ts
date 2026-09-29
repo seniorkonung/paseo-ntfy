@@ -1,6 +1,8 @@
 import type { PluginServerContext } from "@getpaseo/plugin/server";
+import { CompletedTurnFilter } from "./server/completed-turns";
 import { setAgentNtfyLabel } from "./server/labels";
 import { NtfyNotificationService, reasonForTurnOutcome } from "./server/notifications";
+import { DaemonProviderSubagentSource } from "./server/provider-subagents";
 import { publishNtfy } from "./server/publisher";
 import { NtfySettingsStore, normalizeNtfySettings } from "./server/settings";
 import {
@@ -13,6 +15,7 @@ import {
 export default function contribute(server: PluginServerContext) {
   const settingsStore = new NtfySettingsStore();
   const notifications = new NtfyNotificationService(settingsStore);
+  const completedTurns = new CompletedTurnFilter(new DaemonProviderSubagentSource());
 
   server.handle(readNtfySettingsRpc, async () => {
     const settings = await settingsStore.read();
@@ -70,11 +73,19 @@ export default function contribute(server: PluginServerContext) {
 
   const removeTurnEnded = server.on("agent.turn_ended", async (event, context) => {
     const reason = reasonForTurnOutcome(event.outcome);
+    if (reason === "completed") {
+      await notifications.notify(event.agent, reason, context, () =>
+        completedTurns.shouldNotify(event.agent, event.timeline),
+      );
+      return;
+    }
+    completedTurns.forget(event.agent.id);
     if (reason) await notifications.notify(event.agent, reason, context);
   });
   const removePermissionRequested = server.on(
     "agent.permission_requested",
     async (event, context) => {
+      completedTurns.forget(event.agent.id);
       await notifications.notify(event.agent, "permission", context);
     },
   );
@@ -83,5 +94,6 @@ export default function contribute(server: PluginServerContext) {
     removeTurnEnded();
     removePermissionRequested();
     notifications.stop();
+    completedTurns.stop();
   };
 }

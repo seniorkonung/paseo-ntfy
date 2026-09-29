@@ -107,6 +107,20 @@ describe("NtfyNotificationService", () => {
     );
   });
 
+  it("asks the turn filter only for opted-in agents", async () => {
+    const publish = vi.fn(async () => {});
+    const skip = vi.fn(async () => false);
+
+    const disabled = new NtfyNotificationService(store("topic"), undefined, publish as never);
+    await disabled.notify(agent, "completed", contextWithLabels({ ntfy: "false" }), skip);
+    expect(skip).not.toHaveBeenCalled();
+
+    const enabled = new NtfyNotificationService(store("topic"), undefined, publish as never);
+    await enabled.notify(agent, "completed", contextWithLabels({ ntfy: "true" }), skip);
+    expect(skip).toHaveBeenCalledOnce();
+    expect(publish).not.toHaveBeenCalled();
+  });
+
   it("does nothing while the global topic is empty", async () => {
     const publish = vi.fn(async () => {});
     const context = contextWithLabels({ ntfy: "true" });
