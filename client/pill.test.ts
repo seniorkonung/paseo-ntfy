@@ -77,7 +77,7 @@ describe("registerNtfyPills", () => {
       agentId: "agent-1",
       button: {
         title: "Toggle ntfy notifications for this agent",
-        label: "Ntfy",
+        label: "NTFY",
         icon: NtfyPillIcon,
         behavior: { kind: "action" },
       },
