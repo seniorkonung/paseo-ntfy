@@ -5,7 +5,7 @@ finishes, fails, or requests permission/input.
 
 ## Setup
 
-1. Install the plugin into a Paseo 0.8 host:
+1. Install the plugin into a Paseo 0.10 host:
 
    ```sh
    paseo plugin install seniorkonung/paseo-ntfy

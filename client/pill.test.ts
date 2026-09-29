@@ -60,7 +60,7 @@ describe("registerNtfyPills", () => {
     vi.clearAllMocks();
   });
 
-  it("registers the stable Paseo 0.8 button contract and toggles the agent label", async () => {
+  it("registers the stable Paseo 0.10 button contract and toggles the agent label", async () => {
     const fixture = deferredClient();
     const cleanup = registerNtfyPills(fixture.client);
 
